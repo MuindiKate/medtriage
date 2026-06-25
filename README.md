@@ -52,26 +52,6 @@ A **production-grade REST API** that CHW-facing applications integrate into. The
 }
 ```
 
-### Sample Response
-```json
-{
-  "triage_level": "EMERGENCY",
-  "confidence": 0.87,
-  "differentials": [
-    { "condition": "Severe Pneumonia", "likelihood": "high", "icd_code": "J18.9" },
-    { "condition": "Sepsis", "likelihood": "moderate", "icd_code": "A41.9" }
-  ],
-  "immediate_actions": [
-    "Do not send home",
-    "Administer oxygen if available",
-    "Refer to hospital within 1 hour"
-  ],
-  "reasoning": "Child presents with high fever, tachycardia, tachypnea, and chest indrawing. Oxygen saturation below 95% with respiratory distress in a child under 5 meets WHO criteria for severe pneumonia. Immediate referral required.",
-  "uncertainty_flags": [],
-  "disclaimer": "This assessment is decision support only. Clinical judgment and professional review are required before any action."
-}
-```
-
 ---
 
 ## What Makes This Different
