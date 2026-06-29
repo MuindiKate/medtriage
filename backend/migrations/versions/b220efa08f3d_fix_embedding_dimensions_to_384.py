@@ -27,6 +27,6 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.alter_column('knowledge_chunks', 'embedding',
-               existing_type=Vector(384),
+               existing_type=Vector(384),  #changed from 1536 to 384
                type_=Vector(1536),
                existing_nullable=True)
