@@ -1,0 +1,94 @@
+WORLD HEALTH ORGANIZATION - IMCI GUIDELINES
+Integrated Management of Childhood Illness
+
+DANGER SIGNS IN CHILDREN
+General danger signs require immediate referral:
+- Child cannot drink or breastfeed
+- Child vomits everything
+- Child has had convulsions
+- Child is lethargic or unconscious
+
+PNEUMONIA CLASSIFICATION
+Severe Pneumonia (Emergency - Refer immediately):
+- Chest indrawing present
+- Oxygen saturation below 95%
+- Respiratory rate above 50 breaths/min in children 2-12 months
+- Respiratory rate above 40 breaths/min in children 1-5 years
+- Nasal flaring, grunting
+- Cyanosis
+
+Non-Severe Pneumonia (Urgent - Treat with antibiotics):
+- Fast breathing without chest indrawing
+- Respiratory rate 50+ in infants, 40+ in older children
+- No general danger signs
+
+No Pneumonia (Routine):
+- Cough or cold symptoms
+- No fast breathing
+- No chest indrawing
+
+MALARIA TRIAGE
+Severe Malaria (Emergency - Refer immediately):
+- Prostration or inability to sit/stand
+- Impaired consciousness
+- Respiratory distress
+- Multiple convulsions
+- Abnormal bleeding
+- Severe anaemia (pallor)
+- Haemoglobinuria (black water)
+- Jaundice
+
+Uncomplicated Malaria (Urgent):
+- Fever with positive RDT
+- No severity signs
+- Able to take oral medication
+
+DEHYDRATION ASSESSMENT
+Severe Dehydration (Emergency):
+- Sunken eyes
+- Skin pinch goes back very slowly (>2 seconds)
+- Not able to drink
+- Lethargic or unconscious
+
+Some Dehydration (Urgent):
+- Sunken eyes
+- Skin pinch goes back slowly
+- Drinks eagerly, thirsty
+
+No Dehydration (Routine):
+- No signs above
+- Drinking normally
+
+FEVER ASSESSMENT
+High Risk Fever (Emergency):
+- Temperature above 39.5°C with danger signs
+- Stiff neck (meningitis risk)
+- Bulging fontanelle in infants
+- Petechial or purpuric rash
+- Child under 3 months with any fever
+
+Moderate Risk Fever (Urgent):
+- Temperature 38.5-39.5°C
+- No danger signs
+- Source of infection identified
+
+MALNUTRITION
+Severe Acute Malnutrition (Emergency):
+- MUAC below 115mm
+- Bilateral pitting oedema
+- Weight for height below -3 Z-score
+- Medical complications present
+
+Moderate Acute Malnutrition (Urgent):
+- MUAC 115-125mm
+- No oedema
+- No medical complications
+
+NEONATAL DANGER SIGNS (Emergency - refer all immediately):
+- Stopped feeding well
+- Convulsions
+- Fast breathing (60+ breaths/min)
+- Severe chest indrawing
+- No spontaneous movement
+- Fever or low temperature
+- Jaundice in first 24 hours
