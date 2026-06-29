@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.api.triage import router as triage_router
 
 app = FastAPI(
     title="MedTriage API",
@@ -15,6 +16,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(triage_router, prefix="/api/v1")
+
+
 @app.get("/")
 async def root():
     return {
@@ -22,6 +26,7 @@ async def root():
         "version": "1.0.0",
         "status": "running",
     }
+
 
 @app.get("/health")
 async def health_check():
