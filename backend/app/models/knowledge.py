@@ -12,7 +12,7 @@ class KnowledgeChunk(Base):
     source = Column(String(255), nullable=False)  # e.g. "WHO_IMCI_2014"
     section = Column(String(255))                 # e.g. "Severe Pneumonia"
     content = Column(Text, nullable=False)        # the actual text chunk
-    embedding = Column(Vector(1536))              # vector embedding
+    embedding = Column(Vector(384))              # vector embedding
     chunk_index = Column(Integer)                 # position in original doc
     created_at = Column(DateTime, default=datetime.utcnow)
 
