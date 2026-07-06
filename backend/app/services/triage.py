@@ -4,7 +4,15 @@ import uuid
 from datetime import datetime
 from anthropic import Anthropic
 from app.services.retrieval import retrieve_relevant_knowledge
+from app.services.guardrails import (
+    validate_input,
+    compute_uncertainty_flags,
+    check_emergency_override,
+    compute_confidence_adjustment,
+)
+from app.services.audit import log_triage_request
 from app.schemas.triage import TriageRequestSchema, TriageResponseSchema
+from fastapi import HTTPException
 
 client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
@@ -29,10 +37,14 @@ def build_prompt(request: TriageRequestSchema, knowledge_chunks: list[dict]) -> 
     if request.vitals:
         v = request.vitals
         parts = []
-        if v.temperature_c: parts.append(f"Temperature: {v.temperature_c}°C")
-        if v.heart_rate: parts.append(f"Heart rate: {v.heart_rate} bpm")
-        if v.respiratory_rate: parts.append(f"Respiratory rate: {v.respiratory_rate} breaths/min")
-        if v.oxygen_saturation: parts.append(f"O2 saturation: {v.oxygen_saturation}%")
+        if v.temperature_c:
+            parts.append(f"Temperature: {v.temperature_c}°C")
+        if v.heart_rate:
+            parts.append(f"Heart rate: {v.heart_rate} bpm")
+        if v.respiratory_rate:
+            parts.append(f"Respiratory rate: {v.respiratory_rate} breaths/min")
+        if v.oxygen_saturation:
+            parts.append(f"O2 saturation: {v.oxygen_saturation}%")
         vitals_text = ", ".join(parts)
 
     return f"""You are a clinical decision support system for community health workers in Kenya.
@@ -67,22 +79,36 @@ Respond with valid JSON only. No preamble, no explanation outside the JSON."""
 
 
 async def perform_triage(request: TriageRequestSchema) -> TriageResponseSchema:
-    """Full triage pipeline: retrieve → prompt → Claude → guardrails → response."""
+    """Full triage pipeline: validate → retrieve → prompt → Claude → guardrails → log → response."""
 
-    # Step 1 — Build retrieval query from symptoms
+    # Step 1 — Validate input
+    validation_errors = validate_input(request)
+    if validation_errors:
+        raise HTTPException(
+            status_code=422,
+            detail={"validation_errors": validation_errors}
+        )
+
+    # Step 2 — Compute uncertainty flags BEFORE calling Claude
+    uncertainty_flags = compute_uncertainty_flags(request)
+
+    # Step 3 — Check emergency override
+    force_emergency = check_emergency_override(request)
+
+    # Step 4 — Build retrieval query
     query = f"patient symptoms: {', '.join(request.symptoms)}"
     if request.vitals and request.vitals.temperature_c:
         query += f" fever {request.vitals.temperature_c}°C"
     if request.patient.age < 5:
         query += " child under 5"
 
-    # Step 2 — Retrieve relevant knowledge
+    # Step 5 — Retrieve relevant knowledge
     knowledge_chunks = await retrieve_relevant_knowledge(query, top_k=3)
 
-    # Step 3 — Build grounded prompt
+    # Step 6 — Build grounded prompt
     prompt = build_prompt(request, knowledge_chunks)
 
-    # Step 4 — Call Claude
+    # Step 7 — Call Claude
     message = client.messages.create(
         model="claude-sonnet-4-6",
         max_tokens=1024,
@@ -91,11 +117,10 @@ async def perform_triage(request: TriageRequestSchema) -> TriageResponseSchema:
 
     raw_response = message.content[0].text
 
-    # Step 5 — Parse response
+    # Step 8 — Parse response
     try:
         parsed = json.loads(raw_response)
     except json.JSONDecodeError:
-        # Guardrail: if Claude doesn't return valid JSON, return safe default
         parsed = {
             "triage_level": "URGENT",
             "confidence": 0.5,
@@ -105,23 +130,41 @@ async def perform_triage(request: TriageRequestSchema) -> TriageResponseSchema:
             "uncertainty_flags": ["AI response parsing failed — do not rely on this assessment"]
         }
 
-    # Step 6 — Guardrails
-    # Confidence floor
-    confidence = float(parsed.get("confidence", 0.5))
-    if confidence < 0.4:
-        parsed["uncertainty_flags"].append(
-            "Low confidence assessment — professional review strongly recommended"
+    # Step 9 — Apply emergency override if needed
+    if force_emergency:
+        parsed["triage_level"] = "EMERGENCY"
+        uncertainty_flags.append(
+            "Emergency override applied — critical symptom detected."
         )
 
-    # Always inject disclaimer
-    return TriageResponseSchema(
+    # Step 10 — Merge uncertainty flags from guardrails + Claude
+    all_flags = uncertainty_flags + parsed.get("uncertainty_flags", [])
+
+    # Step 11 — Adjust confidence based on data completeness
+    base_confidence = float(parsed.get("confidence", 0.5))
+    adjusted_confidence = compute_confidence_adjustment(
+        base_confidence, all_flags, request
+    )
+
+    # Step 12 — Build final response
+    response = TriageResponseSchema(
         id=uuid.uuid4(),
         triage_level=parsed["triage_level"],
-        confidence=confidence,
+        confidence=adjusted_confidence,
         differentials=parsed.get("differentials", []),
         immediate_actions=parsed.get("immediate_actions", []),
         reasoning=parsed.get("reasoning", ""),
-        uncertainty_flags=parsed.get("uncertainty_flags", []),
+        uncertainty_flags=all_flags,
         disclaimer=DISCLAIMER,
         created_at=datetime.utcnow(),
     )
+
+    # Step 13 — Audit log every request
+    await log_triage_request(
+        request_data=request.model_dump(),
+        response_data=response.model_dump(),
+        triage_level=response.triage_level,
+        confidence=response.confidence,
+    )
+
+    return response
