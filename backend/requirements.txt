@@ -18,3 +18,5 @@ httpx
 python-dotenv
 tenacity
 sentence-transformers
+python-jose[cryptography]
+passlib[bcrypt]
