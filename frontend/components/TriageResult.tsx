@@ -1,57 +1,87 @@
+"use client";
+import { useEffect, useState } from "react";
+
 const levelConfig: any = {
   EMERGENCY: {
-    bg: "bg-red-900/40",
-    border: "border-red-700",
-    text: "text-red-300",
-    badge: "bg-red-700 text-red-100",
+    bg: "bg-red-950/50",
+    border: "border-red-700/50",
+    text: "text-red-400",
+    pulse: "bg-red-500",
     icon: "🚨",
+    label: "Emergency",
   },
   URGENT: {
-    bg: "bg-yellow-900/40",
-    border: "border-yellow-700",
-    text: "text-yellow-300",
-    badge: "bg-yellow-700 text-yellow-100",
+    bg: "bg-amber-950/50",
+    border: "border-amber-700/50",
+    text: "text-amber-400",
+    pulse: "bg-amber-500",
     icon: "⚠️",
+    label: "Urgent",
   },
   ROUTINE: {
-    bg: "bg-green-900/40",
-    border: "border-green-700",
-    text: "text-green-300",
-    badge: "bg-green-700 text-green-100",
+    bg: "bg-emerald-950/50",
+    border: "border-emerald-700/50",
+    text: "text-emerald-400",
+    pulse: "bg-emerald-500",
     icon: "✅",
+    label: "Routine",
   },
 };
 
-const likelihoodColor: any = {
-  high: "text-red-400",
-  moderate: "text-yellow-400",
-  low: "text-gray-400",
+const likelihoodConfig: any = {
+  high: { color: "text-red-400", bg: "bg-red-950/40 border-red-800/40" },
+  moderate: { color: "text-amber-400", bg: "bg-amber-950/40 border-amber-800/40" },
+  low: { color: "text-slate-400", bg: "bg-slate-800/40 border-slate-700/40" },
 };
 
 export default function TriageResult({ result }: any) {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    setTimeout(() => setVisible(true), 50);
+  }, [result]);
+
   const config = levelConfig[result.triage_level] || levelConfig.URGENT;
   const confidencePct = Math.round(result.confidence * 100);
 
   return (
-    <div className="space-y-4">
-      {/* Triage Level */}
-      <div className={`${config.bg} ${config.border} border rounded-xl p-6`}>
+    <div
+      className={`space-y-4 transition-all duration-500 ${
+        visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
+      }`}
+    >
+      {/* Triage Level Card */}
+      <div className={`${config.bg} ${config.border} border rounded-2xl p-6`}>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl">{config.icon}</span>
+          <div className="flex items-center gap-4">
+            {/* Pulse indicator */}
+            <div className="relative flex items-center justify-center w-12 h-12">
+              <div
+                className={`absolute w-12 h-12 ${config.pulse} rounded-full opacity-20 animate-ping`}
+              />
+              <div className={`w-6 h-6 ${config.pulse} rounded-full`} />
+            </div>
             <div>
-              <p className="text-gray-400 text-sm">Triage Level</p>
-              <p className={`text-2xl font-bold ${config.text}`}>
-                {result.triage_level}
+              <p className="text-slate-400 text-xs uppercase tracking-widest font-mono mb-0.5">
+                Triage Level
+              </p>
+              <p className={`text-2xl font-bold font-mono ${config.text}`}>
+                {config.label}
               </p>
             </div>
           </div>
+
+          {/* Confidence */}
           <div className="text-right">
-            <p className="text-gray-400 text-sm">Confidence</p>
-            <p className="text-2xl font-bold text-white">{confidencePct}%</p>
-            <div className="w-24 bg-gray-700 rounded-full h-1.5 mt-1">
+            <p className="text-slate-400 text-xs uppercase tracking-widest font-mono mb-1">
+              Confidence
+            </p>
+            <p className="text-3xl font-bold font-mono text-white">
+              {confidencePct}
+              <span className="text-lg text-slate-400">%</span>
+            </p>
+            <div className="w-20 bg-slate-800 rounded-full h-1 mt-2 ml-auto">
               <div
-                className="bg-blue-500 h-1.5 rounded-full"
+                className={`${config.pulse} h-1 rounded-full transition-all duration-700`}
                 style={{ width: `${confidencePct}%` }}
               />
             </div>
@@ -61,45 +91,48 @@ export default function TriageResult({ result }: any) {
 
       {/* Differentials */}
       {result.differentials?.length > 0 && (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-          <h3 className="font-semibold mb-3 text-gray-200">
+        <div className="bg-[#111827] border border-white/5 rounded-2xl p-5">
+          <p className="text-xs text-slate-500 uppercase tracking-widest font-mono mb-4">
             Differential Diagnoses
-          </h3>
+          </p>
           <div className="space-y-2">
-            {result.differentials.map((d: any, i: number) => (
-              <div
-                key={i}
-                className="flex items-center justify-between py-2 border-b border-gray-800 last:border-0"
-              >
-                <div>
-                  <p className="text-white text-sm font-medium">{d.condition}</p>
-                  {d.icd_code && (
-                    <p className="text-gray-500 text-xs">{d.icd_code}</p>
-                  )}
-                </div>
-                <span
-                  className={`text-xs font-semibold uppercase ${
-                    likelihoodColor[d.likelihood] || "text-gray-400"
-                  }`}
+            {result.differentials.map((d: any, i: number) => {
+              const lc = likelihoodConfig[d.likelihood] || likelihoodConfig.low;
+              return (
+                <div
+                  key={i}
+                  className={`flex items-center justify-between p-3 rounded-xl border ${lc.bg}`}
                 >
-                  {d.likelihood}
-                </span>
-              </div>
-            ))}
+                  <div>
+                    <p className="text-white text-sm font-medium">{d.condition}</p>
+                    {d.icd_code && (
+                      <p className="text-slate-500 text-xs font-mono mt-0.5">
+                        {d.icd_code}
+                      </p>
+                    )}
+                  </div>
+                  <span className={`text-xs font-bold uppercase font-mono ${lc.color}`}>
+                    {d.likelihood}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
 
       {/* Immediate Actions */}
       {result.immediate_actions?.length > 0 && (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-          <h3 className="font-semibold mb-3 text-gray-200">
+        <div className="bg-[#111827] border border-white/5 rounded-2xl p-5">
+          <p className="text-xs text-slate-500 uppercase tracking-widest font-mono mb-4">
             Immediate Actions
-          </h3>
+          </p>
           <ul className="space-y-2">
             {result.immediate_actions.map((action: string, i: number) => (
-              <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
-                <span className="text-blue-400 mt-0.5">→</span>
+              <li key={i} className="flex items-start gap-3 text-sm text-slate-300">
+                <span className="text-blue-400 font-mono text-xs mt-0.5 shrink-0">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
                 {action}
               </li>
             ))}
@@ -109,24 +142,25 @@ export default function TriageResult({ result }: any) {
 
       {/* Reasoning */}
       {result.reasoning && (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-          <h3 className="font-semibold mb-2 text-gray-200">Clinical Reasoning</h3>
-          <p className="text-gray-300 text-sm leading-relaxed">
-            {result.reasoning}
+        <div className="bg-[#111827] border border-white/5 rounded-2xl p-5">
+          <p className="text-xs text-slate-500 uppercase tracking-widest font-mono mb-3">
+            Clinical Reasoning
           </p>
+          <p className="text-slate-300 text-sm leading-relaxed">{result.reasoning}</p>
         </div>
       )}
 
       {/* Uncertainty Flags */}
       {result.uncertainty_flags?.length > 0 && (
-        <div className="bg-yellow-900/20 border border-yellow-800 rounded-xl p-5">
-          <h3 className="font-semibold mb-2 text-yellow-300">
+        <div className="bg-amber-950/20 border border-amber-800/30 rounded-2xl p-5">
+          <p className="text-xs text-amber-500 uppercase tracking-widest font-mono mb-3">
             ⚠️ Uncertainty Flags
-          </h3>
-          <ul className="space-y-1">
+          </p>
+          <ul className="space-y-1.5">
             {result.uncertainty_flags.map((flag: string, i: number) => (
-              <li key={i} className="text-yellow-200 text-sm">
-                • {flag}
+              <li key={i} className="text-amber-200/80 text-sm flex items-start gap-2">
+                <span className="text-amber-500 shrink-0">·</span>
+                {flag}
               </li>
             ))}
           </ul>
@@ -134,9 +168,10 @@ export default function TriageResult({ result }: any) {
       )}
 
       {/* Disclaimer */}
-      <div className="bg-gray-900 border border-gray-700 rounded-xl p-4">
-        <p className="text-gray-500 text-xs leading-relaxed">
-          ⚕️ {result.disclaimer}
+      <div className="border border-white/5 rounded-2xl p-4">
+        <p className="text-slate-500 text-xs leading-relaxed">
+          <span className="text-slate-400 font-medium">⚕️ Disclaimer · </span>
+          {result.disclaimer}
         </p>
       </div>
     </div>
