@@ -20,3 +20,4 @@ tenacity
 sentence-transformers
 python-jose[cryptography]
 passlib[bcrypt]
+email-validator
