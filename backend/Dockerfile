@@ -7,8 +7,14 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir --timeout=300 --retries=5 -r requirements.txt
+RUN pip install --no-cache-dir --timeout=300 \
+    fastapi uvicorn[standard] pydantic pydantic-settings \
+    sqlalchemy asyncpg alembic pgvector \
+    redis anthropic \
+    python-jose[cryptography] passlib[bcrypt] \
+    python-multipart httpx python-dotenv \
+    tenacity email-validator \
+    langchain langchain-anthropic langchain-community
 
 COPY . .
 
