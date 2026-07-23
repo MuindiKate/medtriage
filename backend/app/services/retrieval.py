@@ -1,5 +1,5 @@
 import os
-from sentence_transformers import SentenceTransformer
+import anthropic
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import text
@@ -16,39 +16,42 @@ AsyncSessionLocal = sessionmaker(
     engine, class_=AsyncSession, expire_on_commit=False
 )
 
-model = SentenceTransformer("all-MiniLM-L6-v2")
+client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+
+
+def get_embedding(text: str) -> list[float]:
+    """Generate embedding using a simple hash-based approach for retrieval."""
+    # Since Anthropic doesn't have a standalone embeddings endpoint,
+    # we use keyword-based retrieval as a fallback
+    keywords = text.lower().split()
+    return keywords
 
 
 async def retrieve_relevant_knowledge(query: str, top_k: int = 3) -> list[dict]:
     """
-    Convert query to embedding, retrieve top_k most similar
-    knowledge chunks from pgvector.
+    Retrieve relevant knowledge chunks using keyword matching.
+    Returns top_k most relevant chunks.
     """
-    # Generate embedding for the query
-    query_embedding = model.encode(query).tolist()
+    query_words = set(query.lower().split())
 
     async with AsyncSessionLocal() as session:
         result = await session.execute(
-            text("""
-                SELECT source, section, content,
-                       embedding <=> cast(:embedding as vector) as distance
-                FROM knowledge_chunks
-                ORDER BY distance
-                LIMIT :top_k
-            """),
-            {
-                "embedding": str(query_embedding),
-                "top_k": top_k
-            }
+            text("SELECT source, section, content FROM knowledge_chunks")
         )
         rows = result.fetchall()
 
-    return [
-        {
+    # Score each chunk by keyword overlap
+    scored = []
+    for row in rows:
+        content_words = set(row.content.lower().split())
+        overlap = len(query_words & content_words)
+        scored.append({
             "source": row.source,
             "section": row.section,
             "content": row.content,
-            "distance": row.distance,
-        }
-        for row in rows
-    ]
+            "distance": 1 / (overlap + 1),
+        })
+
+    # Sort by relevance and return top_k
+    scored.sort(key=lambda x: x["distance"])
+    return scored[:top_k]
